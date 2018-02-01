@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+# Version info
+# V 1.1 - Add buy date
 
 use strict;
 use warnings;
@@ -17,6 +19,7 @@ my $baseURL = "https://api.coinmarketcap.com/v1/ticker/?limit=0";
 my @tickers;
 my @qtys;
 my @buy_price_data;
+my @buy_date_data;
 my $driver = "SQLite";
 my $database = "crypto_data/test.db";
 my $dsn = "DBI:$driver:dbname=$database";
@@ -39,7 +42,7 @@ my $sortOrder = $ARGV[0];
 if (!$sortOrder) { 
 	$sortOrder = "rowid"
 }; 
-print $sortOrder . "\n";
+#print $sortOrder . "\n";
 
 # Open a connection to the database and truncate the table
 # We are only using the db for sorting the rows 
@@ -87,6 +90,7 @@ sub refresh_values {
 		my $t_change_1h = $json_obj[0][$idx]->{"percent_change_1h"};
 		my $t_change_24h = $json_obj[0][$idx]->{"percent_change_24h"};
 		my $t_change_7d = $json_obj[0][$idx]->{"percent_change_7d"};
+		my $t_buy_date = $buy_date_data[$i];
 
 		my $ins_stmt = qq(
 		INSERT INTO results (
@@ -103,7 +107,8 @@ sub refresh_values {
 			change_usd,
 			change_1h,
 			change_24h,
-			change_7d )
+			change_7d, 
+			buy_date)
 			VALUES (
 			$i,
 			\"$t_id\",
@@ -118,7 +123,8 @@ sub refresh_values {
 			$t_change_usd,
 			$t_change_1h,
 			$t_change_24h,
-			$t_change_7d ));
+			$t_change_7d,
+			\"$t_buy_date\"));
 
 		$rv = $dbh->do($ins_stmt) or die $DBI::errstr;
 		} ;
@@ -133,8 +139,9 @@ sub refresh_values {
 			print PRICEDATA $row[2] . "/" ; # Name
 			print PRICEDATA $row[3] . "/" ; # Symbol
 			print PRICEDATA $row[4] . "/" ; # Rank
-			print PRICEDATA Number::Format::format_number($row[5],2,2) . "/" ; # Price USD
+			print PRICEDATA Number::Format::format_number($row[5],6) . "/" ; # Price USD
 			print PRICEDATA Number::Format::format_number($row[8],2,2) . "/" ; # Buy Price
+			print PRICEDATA $row[14] . "/"; # Buy date
 			print PRICEDATA Number::Format::format_number($row[9],2,2) . "/" ; # Change Pct
 			print PRICEDATA Number::Format::format_number($row[6],2,2) . "/" ; # Qty
 			print PRICEDATA Number::Format::format_number($row[7],2,2) . "/" ; # Value USD
@@ -171,12 +178,13 @@ sub refresh_values {
 sub load_coindata {
 	open (COINDATA, "<crypto_data/coindata") or die "Could not open data file: $!";
 	my $idx = 0;
-	my $tmp_t; my $tmp_q; my $tmp_p;
+	my $tmp_t; my $tmp_q; my $tmp_p;my $tmp_date;
 	while (<COINDATA>) {
 		chomp($_);
-		($tmp_t,$tmp_q,$tmp_p) = split /,/, $_;
+		($tmp_t,$tmp_q,$tmp_p,$tmp_date) = split /,/, $_;
 		push (@tickers, $tmp_t);
 		push (@qtys, $tmp_q);
 		push (@buy_price_data, $tmp_p);
+		push (@buy_date_data, $tmp_date);
 	}
 }

@@ -56,6 +56,7 @@
 				<th>Rank</th>
 				<th>Price (USD)</th>
 				<th>Buy Price</th>
+				<th>Buy Date</th>
 				<th>Change %</th>
 				<th>Qty</th>
 				<th>Value (USD)</th>
@@ -81,7 +82,7 @@
 					} else {
 						$str = "align\"left\">";
 					};
-					if ($idx > 7) {
+					if ($idx > 5) {
 						if ($r < 0) { 
 							$str .= "<font color=\"red\">"  ;
 						} else { 
@@ -108,7 +109,11 @@
 					echo "<tr>" ; 
 					$row = explode("/",$l);
 					foreach ($row as $r) {
-						echo "<td align=\"left\">{$r}</td>";
+						if ($r < 0) {
+							echo "<td align=\"left\"><font color=\"red\">{$r}</font></td>";
+						} else { 
+							echo "<td align=\"left\">{$r}</td>";
+						};
 					} ;
 					echo "</tr>";
 				}

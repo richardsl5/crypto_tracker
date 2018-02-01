@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+# Version info
+# 1.1 add buy date 
 
 use strict;
 use warnings;
@@ -31,40 +33,10 @@ my $stmt = qq(create table results (
 	change_usd	real	NOT NULL,
 	change_1h	real	NOT NULL,
 	change_24h	real	NOT NULL,
-	change_7d	real 	NOT NULL);
+	change_7d	real 	NOT NULL,
+	buy_date	text	NOT NULL);
 	);
 	
-my $ins_stmt = qq(insert into results (
-	rowid,
-	id 	,
-	name,
-	symbol,
-	rank,
-	price_USD,
-	qty		,
-	value_usd,
-	buy_price	,
-	change_pct	,
-	change_usd	,
-	change_1h	,
-	change_24h	,
-	change_7d)	
-	VALUES (
-	2, 
-	\"$id\",
-	\"$name\",
-	\"$symbol\",
-	11,
-	2.29,
-	220,
-	345.56,
-	2.21,
-	0.45,
-	120,
-	0.3,
-	0.4,
-	22.4));
-
 my $rv = $dbh->do($stmt);
 if ($rv < 0) {
 	print $DBI::errstr;

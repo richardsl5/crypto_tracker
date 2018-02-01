@@ -12,7 +12,7 @@ use Data::Dumper;
 use DBI;
 
 my $driver = "SQLite";
-my $database = "test.db";
+my $database = "crypto_data/test.db";
 my $dsn = "DBI:$driver:dbname=$database";
 my $dbh = DBI->connect($dsn) or die $DBI::errstr;
 print "Opened database successfully\n";
