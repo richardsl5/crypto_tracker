@@ -20,17 +20,12 @@ my @tickers;
 my @qtys;
 my @buy_price_data;
 my @buy_date_data;
-my $driver = "SQLite";
-my $database = "crypto_data/test.db";
-my $dsn = "DBI:$driver:dbname=$database";
-
-# read in the coin data from a data file.
-load_coindata();
+my $dsn = "DBI:mysql:database=crypto;host=localhost";
 
 my $USDtoHKD = 7.82; #Estimate for conversion rate
 my $cash_input_hkd = 126000;
 my $cash_input_usd = $cash_input_hkd / $USDtoHKD;
-my $rows = @tickers ;
+my $rows = 0;
 
 my $ua = LWP::UserAgent->new(
 	ssl_opts=> { verify_hostname => 0 },
@@ -40,20 +35,32 @@ my $ua = LWP::UserAgent->new(
 # Look for command line params
 my $sortOrder = $ARGV[0];
 if (!$sortOrder) { 
-	$sortOrder = "rowid"
+	$sortOrder = "row_id"
 }; 
-#print $sortOrder . "\n";
 
 # Open a connection to the database and truncate the table
 # We are only using the db for sorting the rows 
-my $dbh = DBI->connect($dsn) or die $DBI::errstr;
+my $dbh = DBI->connect($dsn,"root","yell0wTail");
+if (not defined $dbh) { die "Connect failed" };
+
+$dbh->do("use crypto")  or die "Use stmt failed $dbh->errstr()";
 
 my $stmt = qq(DELETE FROM results;);
 my $rv = $dbh->do($stmt) or die $DBI::errstr;
 
 #load_initial_values();
-refresh_values ();
+load_coindata();
+$rows = @tickers;
+refresh_values();
 
+# Subroutines
+# refresh_values
+# Get price data from coinmarket cap
+# For each coin we have
+#	search for coin in data
+#	insert row into database
+# select from database with order by
+#
 sub refresh_values {
 	my $total_value = 0;
 	my $request = HTTP::Request->new("GET" => $baseURL); # get the data, all in one page
@@ -69,7 +76,7 @@ sub refresh_values {
 		$idx = 0; 
 		# run through the returned result set looking for our ticker.
 		while (defined ($json_obj[0][$idx])) {
-			if ($target eq $json_obj[0][$idx]->{"id"}) {
+			if ($target eq $json_obj[0][$idx]->{"symbol"}) {
 				last;
 			};
 			$idx++;
@@ -94,10 +101,10 @@ sub refresh_values {
 
 		my $ins_stmt = qq(
 		INSERT INTO results (
-			rowid,
+			row_id,
 			id, 
 			name,
-			symbol,
+			ticker,
 			rank,
 			price_usd,
 			qty,
@@ -166,25 +173,21 @@ sub refresh_values {
 	$diff = $total_value - $cash_input_usd;
 	printf SUMMARY "USD Change/" . Number::Format::format_number($diff) . "\n"; # USD change
 	printf SUMMARY "HKD Change/" . Number::Format::format_number($diff*$USDtoHKD) . "\n" ; # HKD Change
-#	$change_value_b->set_text(Number::Format::format_number($diff));
-#	$change_value_hkd_b->set_text(Number::Format::format_number($diff*$USDtoHKD));
 	my @ta = localtime();
 	my $time_str= ($ta[5]+1900) . "-" . sprintf("%02d",($ta[4]+1)) . "-" . sprintf("%02d",$ta[3]) . "\t" . sprintf("%02d",$ta[2]) . ":"  . sprintf("%02d",$ta[1]);
 	printf SUMMARY "Last Refresh" . "/" . $time_str;
 	close SUMMARY;
 } # end of sub refresh_values
 
-#load coin data from coindata file.
+#load coin data from database
 sub load_coindata {
-	open (COINDATA, "<crypto_data/coindata") or die "Could not open data file: $!";
-	my $idx = 0;
-	my $tmp_t; my $tmp_q; my $tmp_p;my $tmp_date;
-	while (<COINDATA>) {
-		chomp($_);
-		($tmp_t,$tmp_q,$tmp_p,$tmp_date) = split /,/, $_;
-		push (@tickers, $tmp_t);
-		push (@qtys, $tmp_q);
-		push (@buy_price_data, $tmp_p);
-		push (@buy_date_data, $tmp_date);
+	my $coin_select_stmt = qq (SELECT * FROM buy_history ORDER BY id);
+	my $lsth = $dbh->prepare($coin_select_stmt);
+	my $lrv = $lsth->execute() or die $DBI::errstr;
+	while (my @row = $lsth->fetchrow_array()) {
+		push (@tickers, $row[1]);
+		push (@qtys, $row[2]);
+		push (@buy_price_data, $row[3]);
+		push (@buy_date_data, $row[4]);
 	}
 }

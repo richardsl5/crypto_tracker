@@ -43,7 +43,7 @@
 	};
 	</script>
 		<?php
-			echo "<h1 align=\"center\">Crypto Prices</h1>";
+			// echo "<h1 align=\"center\">Crypto Prices</h1>";
 			$exec_str = "./crypto_db.pl " . $_GET['sortBy'];
 			exec ($exec_str);
 		?>
@@ -121,7 +121,6 @@
 			<tbody/>
 		</table>
 
-		<br/>
 		Order By: 
 		<select onchange="reloadpage()" id="sel1">
 			<option value="none">None</option>
@@ -134,7 +133,6 @@
 			<option value="change_24h">Percent Change 24H</option>
 			<option value="change_7d">Percent Change 7D</option>
 		</select>
-		<br/>
 		<button align="center" type="submit" onclick="reloadpage()">Refresh</button>
 		<button align="center" type="submit" onclick="goToOldPage()">Old Style</button>
 
